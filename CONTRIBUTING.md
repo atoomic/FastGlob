@@ -4,13 +4,13 @@ The distribution is contained in a Git repository, so simply clone the
 repository
 
 ```
-$ git clone git@github.com:atoomic/Slack-WebHook.git
+$ git clone git@github.com:atoomic/FastGlob.git
 ```
 
 and change into the newly-created directory.
 
 ```
-$ cd Slack-WebHook
+$ cd FastGlob
 ```
 
 The project uses [`Dist::Zilla`](https://metacpan.org/pod/Dist::Zilla) to
