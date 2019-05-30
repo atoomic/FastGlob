@@ -94,16 +94,15 @@ use Exporter ();
 
 use 5.004;
 use strict;                # be good
-use vars qw($dirsep $rootpat $curdir $parentdir $hidedotfiles $verbose);
 
 # platform specifics
 
-$dirsep = '/';
-$rootpat= '\A\Z';
-$curdir = '.';
-$parentdir = '..';
-$hidedotfiles = 1;
-$verbose = 0;
+our $dirsep = '/';
+our $rootpat= '\A\Z';
+our $curdir = '.';
+our $parentdir = '..';
+our $hidedotfiles = 1;
+our $verbose = 0;
 
 #
 # recursively wildcard expand a list of strings

@@ -4,6 +4,7 @@ Revision history for Slack-WebHook
 
 - Move tests outside of FileGlob
 - Package the distro
+- Remove 'use vars'
 
 1.3     2000-10-30 10:07:41-06:00 America/Denver
 
