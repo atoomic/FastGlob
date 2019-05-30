@@ -2,6 +2,8 @@ Revision history for FastGlob
 
 {{$NEXT}}
 
+1.4       2019-05-30 15:25:36-06:00 America/Denver
+
 Package the distro with Dist::Zilla
 Move tests outside of FileGlob
 Remove 'use vars'
