@@ -4,7 +4,7 @@ FastGlob - A faster glob() implementation
 
 # VERSION
 
-version 1.4
+version 1.5
 
 # SYNOPSIS
 
@@ -52,28 +52,13 @@ And for MacOS to:
     $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
 ```
 
-# NAME
-
-FastGlob - A faster glob() implementation
-
 # INSTALLATION
 
 Copy this module to the Perl 5 Library directory.
 
-# COPYRIGHT
-
-Copyright (c) 1997-1999 Marc Mengel. All rights reserved.
-
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 # AUTHOR
 
-Marc Mengel <`mengel@fnal.gov`>
-
-# AUTHOR
-
-Nicolas R <atoomic@cpan.org>
+Marc Mengel <mengel@fnal.gov>
 
 # COPYRIGHT AND LICENSE
 
