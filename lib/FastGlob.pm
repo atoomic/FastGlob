@@ -67,23 +67,6 @@ the same terms as Perl itself.
 
 Marc Mengel E<lt>F<mengel@fnal.gov>E<gt>
 
-=head1 REVISIONS
-
-=over 4
-
-=item Brad Appleton E<lt>F<bradapp@enteract.com>E<gt> -- v1.2 Feb 1999
-
-Modified to use qr// (and some other minor speedups) and made callable
-as a standalone script
-
-=item Marc Mengel E<lt>F<mengel@fnal.gov>E<gt> -- v1.3 Oct 2000
-
-Bugfixes for 
-empty components (e.g. C<foo//bar>), and 
-adjacent wildcards (e.g. x?? y** or x?*).
-
-=back
-
 =cut
 
 use Exporter ();

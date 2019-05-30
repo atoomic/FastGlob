@@ -1,14 +1,18 @@
-Revision history for Slack-WebHook
+Revision history for FastGlob
 
 {{$NEXT}}
 
-- Move tests outside of FileGlob
-- Package the distro
-- Remove 'use vars'
+Package the distro with Dist::Zilla
+Move tests outside of FileGlob
+Remove 'use vars'
 
-1.3     2000-10-30 10:07:41-06:00 America/Denver
+1.3 2000-10-30 Marc Mengel E<lt>F<mengel@fnal.gov>E<gt>
 
-- Last release on CPAN
+Bugfixes for
+empty components (e.g. C<foo//bar>), and
+adjacent wildcards (e.g. x?? y** or x?*).
 
-- initial release
+1.2 1999-02 Brad Appleton E<lt>F<bradapp@enteract.com>E<gt>
 
+Modified to use qr// (and some other minor speedups) and made callable
+as a standalone script

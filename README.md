@@ -71,19 +71,6 @@ the same terms as Perl itself.
 
 Marc Mengel <`mengel@fnal.gov`>
 
-# REVISIONS
-
-- Brad Appleton <`bradapp@enteract.com`> -- v1.2 Feb 1999
-
-    Modified to use qr// (and some other minor speedups) and made callable
-    as a standalone script
-
-- Marc Mengel <`mengel@fnal.gov`> -- v1.3 Oct 2000
-
-    Bugfixes for 
-    empty components (e.g. `foo//bar`), and 
-    adjacent wildcards (e.g. x?? y\*\* or x?\*).
-
 # AUTHOR
 
 Nicolas R <atoomic@cpan.org>
