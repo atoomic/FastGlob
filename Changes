@@ -1,0 +1,13 @@
+Revision history for Slack-WebHook
+
+{{$NEXT}}
+
+- Move tests outside of FileGlob
+- Package the distro
+
+1.3     2000-10-30 10:07:41-06:00 America/Denver
+
+- Last release on CPAN
+
+- initial release
+
