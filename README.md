@@ -4,7 +4,7 @@ FastGlob - A faster glob() implementation
 
 # VERSION
 
-version 0.001
+version 1.4
 
 # SYNOPSIS
 
