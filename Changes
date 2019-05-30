@@ -3,6 +3,7 @@ Revision history for FastGlob
 {{$NEXT}}
 
 adjust CONTRIBUTING.md
+adjust author and remove duplicate POD sections
 
 1.4       2019-05-30 15:25:36-06:00 America/Denver
 
