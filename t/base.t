@@ -21,8 +21,9 @@ sub globtest(;$) {
         chomp;
 
         note "pattern: $_\n";
-        if ( $_ =~ m{^\s#} ) {
+        if ( $_ =~ m{^#} ) {
           note " test skipped... TODO";
+          next;
         }
 
         @t0     = times();
