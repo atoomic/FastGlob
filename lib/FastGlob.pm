@@ -76,7 +76,7 @@ our $verbose = 0;
 # recursively wildcard expand a list of strings
 #
 
-sub glob($) {
+sub glob {
 
     my @res; 
     my $part;
@@ -161,7 +161,7 @@ sub glob($) {
     return sort(@res);
 }
 
-sub recurseglob($ $ @) {
+sub recurseglob {
     my($dir, $dirname, @comps) = @_;
     my(@res) = ();
     my($re, $anymatches, @names);
