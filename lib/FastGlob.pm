@@ -57,7 +57,7 @@ use Exporter ();
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&glob);
-@EXPORT_OK = qw(dirsep rootpat curdir parentidr hidedotfiles);
+@EXPORT_OK = qw(dirsep rootpat curdir parentdir hidedotfiles);
 
 use 5.004;
 use strict;                # be good
