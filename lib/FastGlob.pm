@@ -61,6 +61,7 @@ use Exporter ();
 
 use 5.004;
 use strict;                # be good
+use Carp qw(carp);
 
 # platform specifics
 
@@ -179,7 +180,10 @@ sub recurseglob($ $ @) {
         $re = '\A' . shift(@comps) . '\Z';
 
         # slurp in the directory
-        opendir(HANDLE, $dir);
+        if (!opendir(HANDLE, $dir)) {
+            carp "FastGlob: opendir '$dir' failed: $!" if $verbose;
+            return @res;
+        }
         @names = readdir(HANDLE);
         closedir(HANDLE);
 
