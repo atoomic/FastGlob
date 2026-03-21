@@ -123,7 +123,7 @@ sub glob($) {
 
     for (@_) {
     # if there's no wildcards, just return it
-        unless (/(^|[^\\])[*?\[\]{}]/) {
+        unless (/(?<!\\)[*?\[\]{}]/) {
         push (@res, $_);
         next;
         }
