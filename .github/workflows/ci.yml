@@ -1,0 +1,101 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+  pull_request:
+
+jobs:
+
+  perl-versions:
+    runs-on: ubuntu-latest
+    name: List Perl versions
+    outputs:
+      perl-versions: ${{ steps.action.outputs.perl-versions }}
+    steps:
+      - id: action
+        uses: perl-actions/perl-versions@v2
+        with:
+          since-perl: 5.8
+          with-devel: true
+
+  linux:
+    name: "Perl ${{ matrix.perl-version }}"
+    needs: [perl-versions]
+    runs-on: ubuntu-latest
+
+    env:
+      PERL_USE_UNSAFE_INC: 0
+      AUTHOR_TESTING: 1
+      AUTOMATED_TESTING: 1
+      RELEASE_TESTING: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version: ${{ fromJson(needs.perl-versions.outputs.perl-versions) }}
+
+    container:
+      image: perldocker/perl-tester:${{ matrix.perl-version }}
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: perl -V
+        run: perl -V
+      - name: Install test deps using cpm
+        uses: perl-actions/install-with-cpm@v1
+        with:
+          sudo: false
+          global: false
+          cpanfile: ".github/cpanfile"
+      - name: Set PERL5LIB to local lib
+        run: echo "PERL5LIB=$(pwd)/local/lib/perl5" >> $GITHUB_ENV
+      - name: Makefile.PL
+        run: perl Makefile.PL
+      - name: make test
+        run: make test
+      - name: make install
+        run: make install
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+
+    env:
+      PERL_USE_UNSAFE_INC: 0
+      AUTHOR_TESTING: 1
+      AUTOMATED_TESTING: 1
+      RELEASE_TESTING: 1
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: perl -V
+        run: perl -V
+      - name: Makefile.PL
+        run: perl Makefile.PL
+      - name: make test
+        run: make test
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+
+    env:
+      PERL_USE_UNSAFE_INC: 0
+      AUTOMATED_TESTING: 1
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Perl
+        run: |
+          choco install strawberryperl
+          echo "C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin" >> $env:GITHUB_PATH
+      - name: perl -V
+        run: perl -V
+      - name: Makefile.PL
+        run: perl Makefile.PL
+      - name: make test
+        run: gmake test
