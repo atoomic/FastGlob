@@ -26,6 +26,15 @@ sub globtest(;$) {
           next;
         }
 
+        # On Windows, CORE::glob resolves relative components (../)
+        # even when the leading path does not exist, producing results
+        # that differ from FastGlob (which correctly returns empty).
+        # Skip these patterns on Windows to avoid false failures.
+        if ( $^O eq 'MSWin32' && /~\w+.*\.\./ ) {
+          note " skipping on Windows (tilde-path with ..): $_";
+          next;
+        }
+
         @t0     = times();
         @list1  = FastGlob::glob($_);
         @t1     = times();
