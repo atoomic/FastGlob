@@ -69,8 +69,10 @@ use Carp qw(carp);
 
 # platform specifics — auto-detect Windows defaults
 
-our $dirsep       = ( $^O eq 'MSWin32' ) ? '\\' : '/';
-our $rootpat      = ( $^O eq 'MSWin32' ) ? '[A-Z]:' : '\A\Z';
+my $IS_WINDOWS = ( $^O eq 'MSWin32' );
+
+our $dirsep       = $IS_WINDOWS ? '\\' : '/';
+our $rootpat      = $IS_WINDOWS ? '[A-Z]:' : '\A\Z';
 our $curdir       = '.';
 our $parentdir    = '..';
 our $hidedotfiles = 1;
@@ -148,7 +150,7 @@ sub glob {
     # with the directory separator on Windows where $dirsep is \.
     # On Windows, accept both / and \ as path separators in patterns.
     my @comps;
-    if ( $^O eq 'MSWin32' ) {
+    if ( $IS_WINDOWS ) {
         @comps = split(m{[/\\]});
     } else {
         @comps = split(/\Q$dirsep\E/);
