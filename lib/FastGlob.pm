@@ -38,7 +38,7 @@ You can override them after loading the module if needed.
         $FastGlob::rootpat = '[A-Z]:';  # <Drive letter><colon> pattern
         $FastGlob::curdir = '.';        # name of current directory in dir
         $FastGlob::parentdir = '..';    # name of parent directory in dir
-        $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
+        $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
 
 For classic MacOS you would set:
 
@@ -73,7 +73,7 @@ our $dirsep       = ( $^O eq 'MSWin32' ) ? '\\' : '/';
 our $rootpat      = ( $^O eq 'MSWin32' ) ? '[A-Z]:' : '\A\Z';
 our $curdir       = '.';
 our $parentdir    = '..';
-our $hidedotfiles = ( $^O eq 'MSWin32' ) ? 0 : 1;
+our $hidedotfiles = 1;
 our $verbose      = 0;
 
 #
@@ -143,30 +143,51 @@ sub glob {
         next;
         }
 
-    # Make the glob into a regexp
-    # escape + , and | 
-    s/([+.|])/\\$1/go;
+    # Split into directory components FIRST, before regex transformation.
+    # This prevents regex escape sequences (e.g. \.) from being confused
+    # with the directory separator on Windows where $dirsep is \.
+    # On Windows, accept both / and \ as path separators in patterns.
+    my @comps;
+    if ( $^O eq 'MSWin32' ) {
+        @comps = split(m{[/\\]});
+    } else {
+        @comps = split(/\Q$dirsep\E/);
+    }
 
-    # handle * and ?
-    s/(?<!\\)(\*)/.*/go;
-    s/(?<!\\)(\?)/./go;
+    # Check for root pattern before transforming components
+    my $is_rooted = ($comps[0] =~ /($rootpat)/);
+    my $root_prefix = $is_rooted ? $1 : undef;
 
-    # deal with dot files
-    if ( $hidedotfiles ) {
-        s/(\A|\Q$dirsep\E)\.\*/$1(?:[^.].*)?/g;
-        s/(\A|\Q$dirsep\E)\./$1\[\^.\]/g;
-        s/(\A|\Q$dirsep\E)\[\^([^].]*)\]/$1\[\^\\.$2\]/g;
+    # Transform each component into a regex
+    for my $comp (@comps) {
+        if ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
+        # Wildcard component: convert glob pattern to regex
+
+        # escape + . and |
+        $comp =~ s/([+.|])/\\$1/g;
+
+        # handle * and ?
+        $comp =~ s/(?<!\\)(\*)/.*/g;
+        $comp =~ s/(?<!\\)(\?)/./g;
+
+        # deal with dot files
+        if ( $hidedotfiles ) {
+            $comp =~ s/\A\.\*/(?:[^.].*)?/;
+            $comp =~ s/\A\./\[\^.\]/;
+            $comp =~ s/\A\[\^([^].]*)\]/\[\^\\.$1\]/;
+        }
+        } else {
+        # Literal component: escape regex metacharacters
+        $comp = quotemeta($comp);
+        }
     }
 
     # debugging
-    print "regexp is $_\n" if ($verbose);
+    print "regexp components: @comps\n" if ($verbose);
 
-    # now split it into directory components
-    my @comps = split(/\Q$dirsep\E/);
-
-    if ( $comps[0] =~ /($rootpat)/ ) {
+    if ( $is_rooted ) {
         shift(@comps);
-        push(@res, &recurseglob( "$1$dirsep", "$1$dirsep" , @comps ));
+        push(@res, &recurseglob( "$root_prefix$dirsep", "$root_prefix$dirsep" , @comps ));
     }
     else {
         push(@res, &recurseglob( $curdir, '' , @comps ));

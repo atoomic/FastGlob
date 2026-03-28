@@ -21,6 +21,7 @@ for my $sym (@expected_exports) {
 # Verify defaults are accessible
 require FastGlob;
 is($FastGlob::parentdir, '..', 'parentdir defaults to ".."');
-is($FastGlob::dirsep, '/', 'dirsep defaults to "/"');
+my $expected_dirsep = ( $^O eq 'MSWin32' ) ? '\\' : '/';
+is($FastGlob::dirsep, $expected_dirsep, "dirsep defaults to '$expected_dirsep'");
 
 done_testing;
