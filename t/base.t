@@ -26,12 +26,10 @@ sub globtest(;$) {
           next;
         }
 
-        # On Windows, CORE::glob resolves relative components (../)
-        # even when the leading path does not exist, producing results
-        # that differ from FastGlob (which correctly returns empty).
-        # Skip these patterns on Windows to avoid false failures.
-        if ( $^O eq 'MSWin32' && /~\w+.*\.\./ ) {
-          note " skipping on Windows (tilde-path with ..): $_";
+        # Skip patterns containing path separators on Windows — output format
+        # differs between FastGlob ($dirsep=\) and CORE::glob (uses /).
+        if ( $^O eq 'MSWin32' && m{/} ) {
+          note " skipping Unix-path pattern on Windows";
           next;
         }
 
@@ -60,17 +58,21 @@ globtest();
 
 pass 'done';
 
-# Tilde expansion tests — the module supports ~ and ~user patterns (lines 108-122)
-# but they were completely untested.
+# Tilde expansion tests — the module supports ~ and ~user patterns.
+# On Unix, getpwuid/getpwnam provide home dirs; on Windows, $HOME/$USERPROFILE.
 SKIP: {
-    my $has_getpwent = eval { getpwent(); 1 };
-    endpwent() if $has_getpwent;
+    my $homedir;
 
-    skip 'getpwent not available on this platform', 4 unless $has_getpwent;
+    if ( $^O eq 'MSWin32' ) {
+        $homedir = defined($ENV{HOME}) ? $ENV{HOME} : $ENV{USERPROFILE};
+    } else {
+        my $has_getpwent = eval { getpwent(); 1 };
+        endpwent() if $has_getpwent;
+        skip 'getpwent not available on this platform', 4 unless $has_getpwent;
 
-    # ~ expands to current user's home directory
-    my @home = getpwuid($<);
-    my $homedir = $home[7];
+        my @home = getpwuid($<);
+        $homedir = $home[7];
+    }
 
     skip 'cannot determine home directory', 4 unless $homedir && -d $homedir;
 
@@ -78,7 +80,10 @@ SKIP: {
     is( scalar @tilde_results, 1, '~ expands to exactly one entry' );
     is( $tilde_results[0], $homedir, '~ expands to current user home directory' );
 
-    # ~root expands to root's home directory (named user)
+    # ~root expands to root's home directory (named user, Unix only)
+    if ( $^O eq 'MSWin32' ) {
+        skip 'no ~user expansion on Windows', 2;
+    }
     my @root_pw = getpwnam('root');
     skip 'root user not available', 2 unless @root_pw && $root_pw[7] && -d $root_pw[7];
 

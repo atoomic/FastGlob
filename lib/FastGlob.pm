@@ -21,31 +21,35 @@ This is faster than the built-in glob() call, and more robust (on
 many platforms, csh chokes on C<echo *> if too many files are in the
 directory.)
 
-There are several module-local variables that can be set for 
-alternate environments, they are listed below with their (UNIX-ish)
-defaults.
+There are several module-local variables that control platform-specific
+behavior. On Windows (C<$^O eq 'MSWin32'>), these are automatically set
+to appropriate values. On other platforms, UNIX defaults are used.
+You can override them after loading the module if needed.
 
+        # UNIX defaults (auto-detected):
         $FastGlob::dirsep = '/';        # directory path separator
         $FastGlob::rootpat = '\A\Z';    # root directory prefix pattern
         $FastGlob::curdir = '.';        # name of current directory in dir
         $FastGlob::parentdir = '..';    # name of parent directory in dir
         $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
 
-So for MS-DOS for example, you could set these to:
-
+        # Windows defaults (auto-detected on MSWin32):
         $FastGlob::dirsep = '\\';       # directory path separator
         $FastGlob::rootpat = '[A-Z]:';  # <Drive letter><colon> pattern
         $FastGlob::curdir = '.';        # name of current directory in dir
         $FastGlob::parentdir = '..';    # name of parent directory in dir
-        $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
+        $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
 
-And for MacOS to:
+For classic MacOS you would set:
 
         $FastGlob::dirsep = ':';        # directory path separator
         $FastGlob::rootpat = '\A\Z';    # root directory prefix pattern
         $FastGlob::curdir = '.';        # name of current directory in dir
         $FastGlob::parentdir = '..';    # name of parent directory in dir
         $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
+
+Tilde expansion (C<~> and C<~user>) uses C<getpwuid>/C<getpwnam> on UNIX.
+On Windows, C<~> falls back to C<$HOME> or C<$USERPROFILE>.
 
 =head1 INSTALLATION
 
@@ -63,14 +67,16 @@ use 5.004;
 use strict;                # be good
 use Carp qw(carp);
 
-# platform specifics
+# platform specifics — auto-detect Windows defaults
 
-our $dirsep = '/';
-our $rootpat= '\A\Z';
-our $curdir = '.';
-our $parentdir = '..';
+my $IS_WINDOWS = ( $^O eq 'MSWin32' );
+
+our $dirsep       = $IS_WINDOWS ? '\\' : '/';
+our $rootpat      = $IS_WINDOWS ? '[A-Z]:' : '\A\Z';
+our $curdir       = '.';
+our $parentdir    = '..';
 our $hidedotfiles = 1;
-our $verbose = 0;
+our $verbose      = 0;
 
 #
 # recursively wildcard expand a list of strings
@@ -108,10 +114,20 @@ sub glob {
 
     for (@_) {
     # check for and do  tilde expansion
-    if ( /^\~([^${dirsep}]*)/ ) {
+    if ( /^\~([^\Q${dirsep}\E]*)/ ) {
         my $usr = $1;
-        my $usrdir = ( ($1 eq "") ? getpwuid($<) : getpwnam($usr) )[7];
-        if ($usrdir ne "" ) {
+        my $usrdir;
+        if ( $usr eq "" ) {
+            # ~ alone: try getpwuid, fall back to $HOME / $USERPROFILE
+            $usrdir = eval { (getpwuid($<))[7] };
+            if ( !defined $usrdir ) {
+                $usrdir = defined $ENV{HOME} ? $ENV{HOME} : $ENV{USERPROFILE};
+            }
+        } else {
+            # ~user: try getpwnam (not available on Windows)
+            $usrdir = eval { (getpwnam($usr))[7] };
+        }
+        if ( defined $usrdir && $usrdir ne "" ) {
                 s/^\~\Q$usr\E/$usrdir/;
         push(@res, $_);
         }
@@ -129,30 +145,51 @@ sub glob {
         next;
         }
 
-    # Make the glob into a regexp
-    # escape + , and | 
-    s/([+.|])/\\$1/go;
+    # Split into directory components FIRST, before regex transformation.
+    # This prevents regex escape sequences (e.g. \.) from being confused
+    # with the directory separator on Windows where $dirsep is \.
+    # On Windows, accept both / and \ as path separators in patterns.
+    my @comps;
+    if ( $IS_WINDOWS ) {
+        @comps = split(m{[/\\]});
+    } else {
+        @comps = split(/\Q$dirsep\E/);
+    }
 
-    # handle * and ?
-    s/(?<!\\)(\*)/.*/go;
-    s/(?<!\\)(\?)/./go;
+    # Check for root pattern before transforming components
+    my $is_rooted = ($comps[0] =~ /($rootpat)/);
+    my $root_prefix = $is_rooted ? $1 : undef;
 
-    # deal with dot files
-    if ( $hidedotfiles ) {
-        s/(\A|$dirsep)\.\*/$1(?:[^.].*)?/go;
-        s/(\A|$dirsep)\./$1\[\^.\]/go;
-        s/(\A|$dirsep)\[\^([^].]*)\]/$1\[\^\\.$2\]/go;
+    # Transform each component into a regex
+    for my $comp (@comps) {
+        if ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
+        # Wildcard component: convert glob pattern to regex
+
+        # escape + . and |
+        $comp =~ s/([+.|])/\\$1/g;
+
+        # handle * and ?
+        $comp =~ s/(?<!\\)(\*)/.*/g;
+        $comp =~ s/(?<!\\)(\?)/./g;
+
+        # deal with dot files
+        if ( $hidedotfiles ) {
+            $comp =~ s/\A\.\*/(?:[^.].*)?/;
+            $comp =~ s/\A\./\[\^.\]/;
+            $comp =~ s/\A\[\^([^].]*)\]/\[\^\\.$1\]/;
+        }
+        } else {
+        # Literal component: escape regex metacharacters
+        $comp = quotemeta($comp);
+        }
     }
 
     # debugging
-    print "regexp is $_\n" if ($verbose);
+    print "regexp components: @comps\n" if ($verbose);
 
-    # now split it into directory components
-    my @comps = split($dirsep);
-
-    if ( $comps[0] =~ /($rootpat)/ ) {
+    if ( $is_rooted ) {
         shift(@comps);
-        push(@res, &recurseglob( "$1$dirsep", "$1$dirsep" , @comps ));
+        push(@res, &recurseglob( "$root_prefix$dirsep", "$root_prefix$dirsep" , @comps ));
     }
     else {
         push(@res, &recurseglob( $curdir, '' , @comps ));
