@@ -165,8 +165,8 @@ sub glob {
         if ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
         # Wildcard component: convert glob pattern to regex
 
-        # escape + . and |
-        $comp =~ s/([+.|])/\\$1/g;
+        # escape regex metacharacters that are not glob syntax
+        $comp =~ s/([+.|(){}\$])/\\$1/g;
 
         # handle * and ?
         $comp =~ s/(?<!\\)(\*)/.*/g;
