@@ -15,7 +15,9 @@ use FastGlob ();
 # These are the most complex code paths in FastGlob with no prior
 # dedicated test coverage.
 
-my $tmpdir = tempdir( CLEANUP => 1 );
+# Use DIR => '.' to avoid Windows 8.3 short path names in the system
+# temp directory (e.g. RUNNER~1) which don't match readdir long names.
+my $tmpdir = tempdir( DIR => '.', CLEANUP => 1 );
 
 # Build a controlled directory tree:
 #   $tmpdir/
@@ -63,7 +65,9 @@ sub rel {
     my @out;
     for (@sorted) {
         my $r = $_;
-        $r =~ s/\Q$tmpdir\E\///;
+        $r =~ s/\Q$tmpdir\E[\/\\]//;
+        # Normalize to forward slashes for portable assertions
+        $r =~ s/\\/\//g;
         push @out, $r;
     }
     return @out;
@@ -170,7 +174,7 @@ subtest 'dotfiles visible when hidedotfiles=0' => sub {
 subtest 'dot-dirs hidden in wildcard dir component' => sub {
     local $FastGlob::hidedotfiles = 1;
     my @got = FastGlob::glob("$tmpdir/*/*.c");
-    my @dirs_seen = map { (split m{/}, $_)[0] } rel(@got);
+    my @dirs_seen = map { (split m{[/\\]}, $_)[0] } rel(@got);
     ok( !grep { /^\./ } @dirs_seen,
         'wildcard dir component hides .dotdir' );
 };
@@ -212,8 +216,8 @@ subtest 'double separator in path' => sub {
     my @got = FastGlob::glob("$tmpdir//alpha/*.c");
     # Double separator may produce paths with extra separator — just verify correct files found
     is( scalar @got, 2, 'double separator finds 2 files' );
-    ok( (grep { /alpha\/one\.c$/ } @got), 'double separator finds one.c' );
-    ok( (grep { /alpha\/two\.c$/ } @got), 'double separator finds two.c' );
+    ok( (grep { /alpha[\/\\]one\.c$/ } @got), 'double separator finds one.c' );
+    ok( (grep { /alpha[\/\\]two\.c$/ } @got), 'double separator finds two.c' );
 };
 
 done_testing;
