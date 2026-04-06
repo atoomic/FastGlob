@@ -203,7 +203,7 @@ sub glob {
 sub recurseglob {
     my($dir, $dirname, @comps) = @_;
     my(@res) = ();
-    my($re, $anymatches, @names);
+    my($re, @names);
 
 
     if ( @comps == 0 ) {
@@ -219,12 +219,13 @@ sub recurseglob {
         $re = '\A' . shift(@comps) . '\Z';
 
         # slurp in the directory
-        if (!opendir(HANDLE, $dir)) {
+        my $dh;
+        if (!opendir($dh, $dir)) {
             carp "FastGlob: opendir '$dir' failed: $!" if $verbose;
             return @res;
         }
-        @names = readdir(HANDLE);
-        closedir(HANDLE);
+        @names = readdir($dh);
+        closedir($dh);
 
         # Hide dotfiles at the readdir level (like CORE::glob does)
         # unless the pattern component explicitly starts with a literal dot.
@@ -237,7 +238,6 @@ sub recurseglob {
         # look for matches, and if you find one, glob the rest of the
         # components. We eval the loop so the regexp gets compiled in,
         # making searches on large directories faster.
-        $anymatches = 0;
         print "component re is qr($re)\n" if ($verbose);
         my $regex = qr($re);
     foreach (@names) {
@@ -255,7 +255,6 @@ sub recurseglob {
         } else {
             unshift(@res, "$dirname$_" );
         }
-        $anymatches = 1;
         }
     }
     }
