@@ -14,7 +14,9 @@ use FastGlob ();
 # Bug: ( ) $ { } were not escaped during glob-to-regex conversion,
 # causing them to be interpreted as regex syntax instead of literals.
 
-my $tmpdir = tempdir( CLEANUP => 1 );
+# Use DIR => '.' to avoid Windows 8.3 short path names in the system
+# temp directory (e.g. RUNNER~1) which don't match readdir long names.
+my $tmpdir = tempdir( DIR => '.', CLEANUP => 1 );
 
 # Helper: create an empty file and return its path
 sub touch {
@@ -34,17 +36,13 @@ touch('a+b.log');
 # --- Parentheses ---
 
 {
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}foo(1)*";
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/foo(1)*");
     is( scalar @got, 1, 'foo(1)* matches exactly one file' );
     like( $got[0], qr/foo\(1\)\.txt$/, 'foo(1)* matches foo(1).txt' );
 }
 
 {
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}foo(*";
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/foo(*");
     is( scalar @got, 2, 'foo(* matches both foo(1).txt and foo(2).txt' )
         or diag "got: @got";
 }
@@ -52,9 +50,7 @@ touch('a+b.log');
 # --- Plus sign (already escaped, regression check) ---
 
 {
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}a+b*";
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/a+b*");
     is( scalar @got, 1, 'a+b* matches exactly one file' );
     like( $got[0], qr/a\+b\.log$/, 'a+b* matches a+b.log' );
 }
@@ -67,9 +63,7 @@ SKIP: {
 
     touch('x|y.dat');
 
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}x|y*";
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/x|y*");
     is( scalar @got, 1, 'x|y* matches exactly one file' );
     like( $got[0], qr/x\|y\.dat$/, 'x|y* matches x|y.dat' );
 }
@@ -82,9 +76,7 @@ SKIP: {
 
     touch('price$5.txt');
 
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}" . 'price$5*';
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/" . 'price$5*');
     is( scalar @got, 1, 'price$5* matches exactly one file' );
     like( $got[0], qr/price\$5\.txt$/, 'price$5* matches price$5.txt' );
 }
@@ -94,9 +86,7 @@ SKIP: {
 {
     touch('fooXbar.txt');
 
-    my $sep = $FastGlob::dirsep;
-    my $pat = "${tmpdir}${sep}foo(X)bar*";
-    my @got = FastGlob::glob($pat);
+    my @got = FastGlob::glob("$tmpdir/foo(X)bar*");
     # Should match literal foo(X)bar, not regex-group fooXbar
     is( scalar @got, 0, 'foo(X)bar* does not match fooXbar.txt (parens are literal)' )
         or diag "unexpected matches: @got";
