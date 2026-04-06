@@ -30,7 +30,6 @@ touch('foo(1).txt');
 touch('foo(2).txt');
 touch('bar.txt');
 touch('a+b.log');
-touch('x|y.dat');
 
 # --- Parentheses ---
 
@@ -62,7 +61,12 @@ touch('x|y.dat');
 
 # --- Pipe (already escaped, regression check) ---
 
-{
+SKIP: {
+    skip 'pipe in filenames is illegal on Windows', 2
+        if $^O eq 'MSWin32';
+
+    touch('x|y.dat');
+
     my $sep = $FastGlob::dirsep;
     my $pat = "${tmpdir}${sep}x|y*";
     my @got = FastGlob::glob($pat);
