@@ -35,7 +35,7 @@ You can override them after loading the module if needed.
 
         # Windows defaults (auto-detected on MSWin32):
         $FastGlob::dirsep = '\\';       # directory path separator
-        $FastGlob::rootpat = '[A-Z]:';  # <Drive letter><colon> pattern
+        $FastGlob::rootpat = '[A-Za-z]:';  # <Drive letter><colon> pattern
         $FastGlob::curdir = '.';        # name of current directory in dir
         $FastGlob::parentdir = '..';    # name of parent directory in dir
         $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
@@ -72,7 +72,7 @@ use Carp qw(carp);
 my $IS_WINDOWS = ( $^O eq 'MSWin32' );
 
 our $dirsep       = $IS_WINDOWS ? '\\' : '/';
-our $rootpat      = $IS_WINDOWS ? '[A-Z]:' : '\A\Z';
+our $rootpat      = $IS_WINDOWS ? '[A-Za-z]:' : '\A\Z';
 our $curdir       = '.';
 our $parentdir    = '..';
 our $hidedotfiles = 1;
