@@ -234,9 +234,14 @@ sub recurseglob {
         print "considering |$_|\n" if ($verbose);
         if ( m{$regex} ) {
         if ( $#comps > -1 ) {
-            unshift(@res, &recurseglob( "$dir$dirsep$_", 
-                        "$dirname$_$dirsep",
-                        @comps ));
+            # Only recurse into actual directories — avoids
+            # futile opendir() calls on plain files.
+            my $subdir = "$dir$dirsep$_";
+            if ( -d $subdir ) {
+                unshift(@res, &recurseglob( $subdir,
+                            "$dirname$_$dirsep",
+                            @comps ));
+            }
         } else {
             unshift(@res, "$dirname$_" );
         }
