@@ -168,6 +168,9 @@ sub glob {
         # escape + . and |
         $comp =~ s/([+.|])/\\$1/g;
 
+        # convert POSIX [!...] negation to regex [^...]
+        $comp =~ s/\[!/[^/g;
+
         # handle * and ?
         $comp =~ s/(?<!\\)(\*)/.*/g;
         $comp =~ s/(?<!\\)(\?)/./g;
