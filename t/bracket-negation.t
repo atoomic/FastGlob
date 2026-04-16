@@ -9,6 +9,7 @@ use warnings;
 
 use Test::More;
 use File::Temp qw(tempdir);
+use File::Basename qw(basename);
 use FastGlob ();
 
 my $dir = tempdir( DIR => '.', CLEANUP => 1 );
@@ -19,40 +20,38 @@ for my $letter ('a' .. 'e') {
     close $fh;
 }
 
+# Compare on basenames only — output path format (separator, drive prefix) varies
+# by platform, but the matched filenames should be deterministic.
+sub got_basenames {
+    return [ sort map { basename($_) } @_ ];
+}
+
 # [!abc].txt — should match d.txt and e.txt (negation)
 {
-    my @got    = FastGlob::glob("$dir/[!abc].txt");
-    my @expect = sort CORE::glob("$dir/[!abc].txt");
-    is_deeply( \@got, \@expect,
+    my @got = FastGlob::glob("$dir/[!abc].txt");
+    is_deeply( got_basenames(@got), [ 'd.txt', 'e.txt' ],
         '[!abc] negation matches files NOT in the set' );
-    is( scalar @got, 2, '[!abc] returns exactly 2 matches (d, e)' );
 }
 
 # [abc].txt — positive match should still work
 {
-    my @got    = FastGlob::glob("$dir/[abc].txt");
-    my @expect = sort CORE::glob("$dir/[abc].txt");
-    is_deeply( \@got, \@expect,
+    my @got = FastGlob::glob("$dir/[abc].txt");
+    is_deeply( got_basenames(@got), [ 'a.txt', 'b.txt', 'c.txt' ],
         '[abc] positive match still works' );
-    is( scalar @got, 3, '[abc] returns exactly 3 matches' );
 }
 
 # [!a-c].txt — negated range
 {
-    my @got    = FastGlob::glob("$dir/[!a-c].txt");
-    my @expect = sort CORE::glob("$dir/[!a-c].txt");
-    is_deeply( \@got, \@expect,
+    my @got = FastGlob::glob("$dir/[!a-c].txt");
+    is_deeply( got_basenames(@got), [ 'd.txt', 'e.txt' ],
         '[!a-c] negated range works' );
-    is( scalar @got, 2, '[!a-c] returns exactly 2 matches (d, e)' );
 }
 
 # [a-c].txt — positive range should still work
 {
-    my @got    = FastGlob::glob("$dir/[a-c].txt");
-    my @expect = sort CORE::glob("$dir/[a-c].txt");
-    is_deeply( \@got, \@expect,
+    my @got = FastGlob::glob("$dir/[a-c].txt");
+    is_deeply( got_basenames(@got), [ 'a.txt', 'b.txt', 'c.txt' ],
         '[a-c] positive range still works' );
-    is( scalar @got, 3, '[a-c] returns exactly 3 matches' );
 }
 
 # Edge: [!] should not break (single ! in brackets)
