@@ -172,12 +172,6 @@ sub glob {
         $comp =~ s/(?<!\\)(\*)/.*/g;
         $comp =~ s/(?<!\\)(\?)/./g;
 
-        # deal with dot files
-        if ( $hidedotfiles ) {
-            $comp =~ s/\A\.\*/(?:[^.].*)?/;
-            $comp =~ s/\A\./\[\^.\]/;
-            $comp =~ s/\A\[\^([^].]*)\]/\[\^\\.$1\]/;
-        }
         } else {
         # Literal component: escape regex metacharacters
         $comp = quotemeta($comp);
@@ -223,6 +217,14 @@ sub recurseglob {
         }
         @names = readdir(HANDLE);
         closedir(HANDLE);
+
+        # Hide dotfiles at the readdir level (like CORE::glob does)
+        # unless the pattern component explicitly starts with a literal dot.
+        # After glob-to-regex conversion, an explicit dot becomes \. in the
+        # regex; a wildcard like * becomes .* (no backslash before the dot).
+        if ( $hidedotfiles && $re !~ /\A\\A\\\./ ) {
+            @names = grep { !/\A\./ } @names;
+        }
 
         # look for matches, and if you find one, glob the rest of the
         # components. We eval the loop so the regexp gets compiled in,
