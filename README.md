@@ -4,13 +4,13 @@ FastGlob - A faster glob() implementation
 
 # VERSION
 
-version 1.5
+version 1.6
 
 # SYNOPSIS
 
 ```perl
     use FastGlob qw(glob);
-    my @list = &glob('*.c');
+    my @list = glob('*.c');
 ```
 
 # DESCRIPTION
@@ -20,29 +20,28 @@ This is faster than the built-in glob() call, and more robust (on
 many platforms, csh chokes on `echo *` if too many files are in the
 directory.)
 
-There are several module-local variables that can be set for 
-alternate environments, they are listed below with their (UNIX-ish)
-defaults.
+There are several module-local variables that control platform-specific
+behavior. On Windows (`$^O eq 'MSWin32'`), these are automatically set
+to appropriate values. On other platforms, UNIX defaults are used.
+You can override them after loading the module if needed.
 
 ```
+    # UNIX defaults (auto-detected):
     $FastGlob::dirsep = '/';        # directory path separator
     $FastGlob::rootpat = '\A\Z';    # root directory prefix pattern
     $FastGlob::curdir = '.';        # name of current directory in dir
     $FastGlob::parentdir = '..';    # name of parent directory in dir
     $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
-```
 
-So for MS-DOS for example, you could set these to:
-
-```
+    # Windows defaults (auto-detected on MSWin32):
     $FastGlob::dirsep = '\\';       # directory path separator
-    $FastGlob::rootpat = '[A-Z]:';  # <Drive letter><colon> pattern
+    $FastGlob::rootpat = '[A-Za-z]:';  # <Drive letter><colon> pattern
     $FastGlob::curdir = '.';        # name of current directory in dir
     $FastGlob::parentdir = '..';    # name of parent directory in dir
-    $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
+    $FastGlob::hidedotfiles = 1;    # hide filenames starting with .
 ```
 
-And for MacOS to:
+For classic MacOS you would set:
 
 ```
     $FastGlob::dirsep = ':';        # directory path separator
@@ -51,6 +50,9 @@ And for MacOS to:
     $FastGlob::parentdir = '..';    # name of parent directory in dir
     $FastGlob::hidedotfiles = 0;    # hide filenames starting with .
 ```
+
+Tilde expansion (`~` and `~user`) uses `getpwuid`/`getpwnam` on UNIX.
+On Windows, `~` falls back to `$HOME` or `$USERPROFILE`.
 
 # INSTALLATION
 
