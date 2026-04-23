@@ -174,7 +174,8 @@ sub glob {
         $comp =~ s/([+.|(){}\$])/\\$1/g;
 
         # convert POSIX [!...] negation to regex [^...]
-        $comp =~ s/\[!/[^/g;
+        # Only convert when there are chars between ! and ] (avoid [!] -> [^] which is invalid)
+        $comp =~ s/\[!(?=[^\]]+\])/[^/g;
 
         # handle * and ?
         $comp =~ s/(?<!\\)(\*)/.*/g;
