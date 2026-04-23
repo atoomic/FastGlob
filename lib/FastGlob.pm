@@ -129,8 +129,10 @@ sub glob {
         }
         if ( defined $usrdir && $usrdir ne "" ) {
                 s/^\~\Q$usr\E/$usrdir/;
-        push(@res, $_);
         }
+        # Always keep the entry — if expansion fails, preserve the
+        # original pattern unchanged (consistent with CORE::glob)
+        push(@res, $_);
     } else {
         push(@res, $_);
         }
