@@ -237,11 +237,11 @@ compare_glob( 'src',
 # =================================================================
 
 {
-    # Empty input
+    # Empty input — CORE::glob('') behavior varies across Perl versions
+    # (some return (''), others return ()), so test FastGlob independently.
     my @fast = FastGlob::glob('');
-    my @core = CORE::glob('');
-    is_deeply( [sort @fast], [sort @core],
-        'empty pattern produces same result' );
+    is_deeply( \@fast, [],
+        'empty pattern returns empty list' );
 }
 
 {
