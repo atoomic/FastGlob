@@ -112,6 +112,8 @@ sub glob {
         @res = ();
     }
 
+    # skip empty patterns — CORE::glob returns nothing for them
+    @_ = grep { defined $_ && $_ ne '' } @_;
 
     for (@_) {
     # check for and do  tilde expansion
