@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 package FastGlob;
 
-require 5.005;
+require 5.008;
 
 # ABSTRACT: A faster glob() implementation
 
@@ -12,7 +12,7 @@ BEGIN {
 =head1 SYNOPSIS
 
         use FastGlob qw(glob);
-        my @list = &glob('*.c');
+        my @list = glob('*.c');
 
 =head1 DESCRIPTION
 
@@ -57,15 +57,16 @@ Copy this module to the Perl 5 Library directory.
 
 =cut
 
+use 5.008;
+use strict;
+use warnings;
+
 use Exporter ();
-
-@ISA = qw(Exporter);
-@EXPORT = qw(&glob);
-@EXPORT_OK = qw(dirsep rootpat curdir parentdir hidedotfiles);
-
-use 5.004;
-use strict;                # be good
 use Carp qw(carp);
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw(glob);
+our @EXPORT_OK = qw(dirsep rootpat curdir parentdir hidedotfiles);
 
 # platform specifics — auto-detect Windows defaults
 
