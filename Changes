@@ -2,6 +2,8 @@ Revision history for FastGlob
 
 {{$NEXT}}
 
+1.6       2026-04-23 17:53:40+02:00 Europe/Vienna
+
 [Bug Fixes]
 - Escape regex metacharacters when converting glob wildcards to regex (#11)
 - Correct 'parentidr' typo to 'parentdir' in @EXPORT_OK (#4)
