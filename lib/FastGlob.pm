@@ -239,7 +239,10 @@ sub recurseglob {
         # components. We eval the loop so the regexp gets compiled in,
         # making searches on large directories faster.
         print "component re is qr($re)\n" if ($verbose);
-        my $regex = qr($re);
+        my $regex = eval { qr($re) };
+        if (!defined $regex) {
+            return @res;
+        }
     foreach (@names) {
         print "considering |$_|\n" if ($verbose);
         if ( m{$regex} ) {
