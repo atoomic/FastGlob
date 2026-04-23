@@ -174,7 +174,8 @@ sub glob {
         $comp =~ s/([+.|(){}\$])/\\$1/g;
 
         # convert POSIX [!...] negation to regex [^...]
-        $comp =~ s/\[!/[^/g;
+        # Only convert when there are chars between ! and ] (avoid [!] -> [^] which is invalid)
+        $comp =~ s/\[!(?=[^\]]+\])/[^/g;
 
         # handle * and ?
         $comp =~ s/(?<!\\)(\*)/.*/g;
@@ -212,7 +213,7 @@ sub recurseglob {
         @res = ($dirname);
     } elsif ($comps[0] eq '') {
         shift(@comps);
-    unshift(@res, &recurseglob( "$dir$dirsep", 
+    push(@res, &recurseglob( "$dir$dirsep",
                     "$dirname$dirsep",
                     @comps ));
     } else {
@@ -248,12 +249,12 @@ sub recurseglob {
             # futile opendir() calls on plain files.
             my $subdir = "$dir$dirsep$_";
             if ( -d $subdir ) {
-                unshift(@res, &recurseglob( $subdir,
+                push(@res, &recurseglob( $subdir,
                             "$dirname$_$dirsep",
                             @comps ));
             }
         } else {
-            unshift(@res, "$dirname$_" );
+            push(@res, "$dirname$_" );
         }
         $anymatches = 1;
         }

@@ -56,9 +56,9 @@ sub got_basenames {
 
 # Edge: [!] should not break (single ! in brackets)
 {
-    my @got = FastGlob::glob("$dir/[!].txt");
+    my @got = eval { FastGlob::glob("$dir/[!].txt") };
     # [!] with no chars after ! is degenerate — just ensure no crash
-    ok( defined \@got, '[!] degenerate case does not crash' );
+    ok( !$@, '[!] degenerate case does not crash' );
 }
 
 done_testing;
