@@ -153,8 +153,7 @@ compare_glob( '[a-d]*',
     'character range [a-d]* matches a-d prefix files' );
 
 compare_glob( '*[!.]*',
-    'negation [!.]* excludes dot-containing names',
-    todo => 'POSIX [!...] negation not yet converted to regex [^...]' );
+    'negation [!.]* excludes dot-containing names' );
 
 # =================================================================
 # Section 3: Brace expansion
@@ -256,6 +255,50 @@ compare_glob( 'src',
             'trailing slash pattern' )
             or diag "FastGlob: [@fast]\nCORE:     [@core]";
     }
+}
+
+# =================================================================
+# Section 9: Brace expansion edge cases
+# =================================================================
+
+compare_glob( '{alpha,}.c',
+    'brace expansion with trailing empty alternative' );
+
+compare_glob( '{,alpha}.c',
+    'brace expansion with leading empty alternative' );
+
+compare_glob( '{}',
+    'bare {} treated as literal' );
+
+{
+    # {single} without comma expands to single element
+    my @fast = sort(FastGlob::glob('{alpha}.c'));
+    my @core = sort(CORE::glob('{alpha}.c'));
+    is_deeply( \@fast, \@core,
+        'single-element brace {alpha}.c expands' )
+        or diag "FastGlob: [@fast]\nCORE:     [@core]";
+}
+
+# =================================================================
+# Section 10: Backslash escaping in literal paths
+# =================================================================
+
+{
+    # Escaped wildcard: \*.c should strip backslash
+    my @fast = FastGlob::glob('\*.c');
+    my @core = CORE::glob('\*.c');
+    is_deeply( \@fast, \@core,
+        'escaped wildcard \\*.c strips backslash' )
+        or diag "FastGlob: [@fast]\nCORE:     [@core]";
+}
+
+{
+    # Escaped dot: alpha\.c should strip backslash
+    my @fast = FastGlob::glob('alpha\.c');
+    my @core = CORE::glob('alpha\.c');
+    is_deeply( \@fast, \@core,
+        'escaped dot alpha\\.c strips backslash' )
+        or diag "FastGlob: [@fast]\nCORE:     [@core]";
 }
 
 # =================================================================
