@@ -60,9 +60,10 @@ is_deeply([sort @got], [sort qw(foo bar xfoo barfoo a.txt b.txt)],
 # --- Escaped wildcards should NOT expand ---
 
 # \*foo should be treated as literal (no expansion)
+# Escape backslash is stripped (like CORE::glob)
 @got = FastGlob::glob('\*foo');
-is_deeply(\@got, ['\*foo'],
-    'escaped \\*foo is treated as literal');
+is_deeply(\@got, ['*foo'],
+    'escaped \\*foo is treated as literal, backslash stripped');
 
 # --- Non-wildcard patterns returned as-is ---
 
