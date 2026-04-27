@@ -80,6 +80,98 @@ our $hidedotfiles = 1;
 our $verbose      = 0;
 
 #
+# Convert a glob pattern component to a regex string.
+#
+# Uses a character-by-character state machine instead of chained regex
+# substitutions. This correctly handles context-dependent characters
+# (e.g. ^ is escaped outside brackets but preserved as negation inside,
+# $ is always escaped, backslash escapes are honored everywhere).
+#
+sub _glob_to_regex {
+    my ($pattern) = @_;
+    my $re = '';
+    my $i = 0;
+    my $len = length($pattern);
+
+    while ($i < $len) {
+        my $ch = substr($pattern, $i, 1);
+
+        if ($ch eq '\\') {
+            # Backslash escape — next char is literal
+            if ($i + 1 < $len) {
+                $re .= '\\' . substr($pattern, $i + 1, 1);
+                $i += 2;
+            } else {
+                # Trailing backslash — treat as literal
+                $re .= '\\\\';
+                $i++;
+            }
+        }
+        elsif ($ch eq '*') {
+            $re .= '.*';
+            $i++;
+        }
+        elsif ($ch eq '?') {
+            $re .= '.';
+            $i++;
+        }
+        elsif ($ch eq '[') {
+            # Bracket expression — parse until closing ]
+            my $j = $i + 1;
+            my $bracket = '[';
+
+            # Convert POSIX [!...] negation to regex [^...]
+            # Note: [^...] in glob is NOT negation (unlike regex) — ^ is
+            # literal per POSIX and CORE::glob behavior.
+            if ($j < $len) {
+                my $next = substr($pattern, $j, 1);
+                if ($next eq '!') {
+                    $bracket .= '^';
+                    $j++;
+                } elsif ($next eq '^') {
+                    $bracket .= '\\^';
+                    $j++;
+                }
+            }
+
+            # A ] immediately after [ or [! is literal, not the end
+            if ($j < $len && substr($pattern, $j, 1) eq ']') {
+                $bracket .= ']';
+                $j++;
+            }
+
+            # Consume characters until closing ]
+            while ($j < $len && substr($pattern, $j, 1) ne ']') {
+                $bracket .= substr($pattern, $j, 1);
+                $j++;
+            }
+
+            if ($j < $len) {
+                # Found closing ] — emit the bracket expression
+                $bracket .= ']';
+                $re .= $bracket;
+                $i = $j + 1;
+            } else {
+                # No closing ] — treat [ as literal
+                $re .= '\\[';
+                $i++;
+            }
+        }
+        else {
+            # Regular character — escape regex metacharacters
+            if (index('+.|(){}$^', $ch) >= 0) {
+                $re .= "\\$ch";
+            } else {
+                $re .= $ch;
+            }
+            $i++;
+        }
+    }
+
+    return $re;
+}
+
+#
 # recursively wildcard expand a list of strings
 #
 
@@ -168,19 +260,8 @@ sub glob {
     # Transform each component into a regex
     for my $comp (@comps) {
         if ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
-        # Wildcard component: convert glob pattern to regex
-
-        # escape regex metacharacters that are not glob syntax
-        $comp =~ s/([+.|(){}\$])/\\$1/g;
-
-        # convert POSIX [!...] negation to regex [^...]
-        # Only convert when there are chars between ! and ] (avoid [!] -> [^] which is invalid)
-        $comp =~ s/\[!(?=[^\]]+\])/[^/g;
-
-        # handle * and ?
-        $comp =~ s/(?<!\\)(\*)/.*/g;
-        $comp =~ s/(?<!\\)(\?)/./g;
-
+        # Wildcard component: convert glob to regex via state machine
+        $comp = _glob_to_regex($comp);
         } else {
         # Literal component: escape regex metacharacters
         $comp = quotemeta($comp);
