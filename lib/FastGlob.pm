@@ -154,11 +154,13 @@ sub glob {
     # This prevents regex escape sequences (e.g. \.) from being confused
     # with the directory separator on Windows where $dirsep is \.
     # On Windows, accept both / and \ as path separators in patterns.
+    # Use -1 limit to preserve trailing empty fields from trailing slashes
+    # (e.g. "*/" splits to ("*", "") so the -d check filters non-directories).
     my @comps;
     if ( $IS_WINDOWS ) {
-        @comps = split(m{[/\\]});
+        @comps = split(m{[/\\]}, $_, -1);
     } else {
-        @comps = split(/\Q$dirsep\E/);
+        @comps = split(/\Q$dirsep\E/, $_, -1);
     }
 
     # Check for root pattern before transforming components
