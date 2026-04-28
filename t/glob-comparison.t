@@ -153,8 +153,7 @@ compare_glob( '[a-d]*',
     'character range [a-d]* matches a-d prefix files' );
 
 compare_glob( '*[!.]*',
-    'negation [!.]* excludes dot-containing names',
-    todo => 'POSIX [!...] negation not yet converted to regex [^...]' );
+    'negation [!.]* excludes dot-containing names' );
 
 # =================================================================
 # Section 3: Brace expansion
@@ -255,6 +254,29 @@ compare_glob( 'src',
         is_deeply( \@fast, \@core,
             'trailing slash pattern' )
             or diag "FastGlob: [@fast]\nCORE:     [@core]";
+    }
+}
+
+# =================================================================
+# Section 9: Trailing slash directory-only matching
+# =================================================================
+
+SKIP: {
+    skip 'path separator format differs on Windows', 3
+        if $^O eq 'MSWin32';
+
+    compare_glob( '*/',
+        'trailing slash matches only directories' );
+
+    compare_glob( 'src/*/',
+        'subdir trailing slash matches only subdirectories' );
+
+    {
+        # Verify trailing slash results actually end with /
+        my @fast = FastGlob::glob('*/');
+        for my $entry (@fast) {
+            like( $entry, qr{/$}, "trailing slash result '$entry' ends with /" );
+        }
     }
 }
 
