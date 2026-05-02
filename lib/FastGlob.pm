@@ -153,9 +153,14 @@ sub glob {
     for (@_) {
     # if there's no wildcards, just return it
         unless (/(?<!\\)[*?\[\]]/) {
-        # Strip glob escape backslashes (like CORE::glob does)
-        (my $literal = $_) =~ s/\\(.)/$1/g;
-        push (@res, $literal);
+        # Strip glob escape backslashes (like CORE::glob does).
+        # On Windows, \ is the path separator, not an escape char.
+        if ( $IS_WINDOWS ) {
+            push (@res, $_);
+        } else {
+            (my $literal = $_) =~ s/\\(.)/$1/g;
+            push (@res, $literal);
+        }
         next;
         }
 

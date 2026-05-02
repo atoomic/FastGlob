@@ -283,22 +283,29 @@ compare_glob( '{}',
 # Section 10: Backslash escaping in literal paths
 # =================================================================
 
-{
-    # Escaped wildcard: \*.c should strip backslash
-    my @fast = FastGlob::glob('\*.c');
-    my @core = CORE::glob('\*.c');
-    is_deeply( \@fast, \@core,
-        'escaped wildcard \\*.c strips backslash' )
-        or diag "FastGlob: [@fast]\nCORE:     [@core]";
-}
+# On Windows, \ is the path separator, not an escape character.
+# Backslash stripping does not apply.
+SKIP: {
+    skip 'backslash is path separator on Windows, not escape', 2
+        if $^O eq 'MSWin32';
 
-{
-    # Escaped dot: alpha\.c should strip backslash
-    my @fast = FastGlob::glob('alpha\.c');
-    my @core = CORE::glob('alpha\.c');
-    is_deeply( \@fast, \@core,
-        'escaped dot alpha\\.c strips backslash' )
-        or diag "FastGlob: [@fast]\nCORE:     [@core]";
+    {
+        # Escaped wildcard: \*.c should strip backslash
+        my @fast = FastGlob::glob('\*.c');
+        my @core = CORE::glob('\*.c');
+        is_deeply( \@fast, \@core,
+            'escaped wildcard \\*.c strips backslash' )
+            or diag "FastGlob: [@fast]\nCORE:     [@core]";
+    }
+
+    {
+        # Escaped dot: alpha\.c should strip backslash
+        my @fast = FastGlob::glob('alpha\.c');
+        my @core = CORE::glob('alpha\.c');
+        is_deeply( \@fast, \@core,
+            'escaped dot alpha\\.c strips backslash' )
+            or diag "FastGlob: [@fast]\nCORE:     [@core]";
+    }
 }
 
 # =================================================================
