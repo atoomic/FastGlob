@@ -96,12 +96,16 @@ SKIP: {
 # Previously ^ was not escaped, causing it to be interpreted as a regex
 # anchor instead of a literal character.
 
+# Create test files outside SKIP so non-skipped tests can use them.
+# ^ is valid in filenames on all platforms.
+touch('mid^dle.txt');
+
 SKIP: {
-    skip 'caret in filenames problematic on Windows', 2
+    # Leading caret may interact with cmd.exe escaping on Windows
+    skip 'leading caret in glob pattern problematic on Windows', 2
         if $^O eq 'MSWin32';
 
     touch('^start.txt');
-    touch('mid^dle.txt');
 
     my @got = FastGlob::glob("$tmpdir/" . '^*');
     is( scalar @got, 1, '^* matches exactly one file starting with ^' )
@@ -117,7 +121,11 @@ SKIP: {
 
 # --- Bracket edge cases ---
 
-{
+SKIP: {
+    # CORE::glob on Windows may handle [^...] differently
+    skip '[^...] CORE::glob comparison unreliable on Windows', 1
+        if $^O eq 'MSWin32';
+
     # In POSIX glob, [^...] treats ^ as literal (unlike regex).
     # Only [!...] is negation. Verify we match CORE::glob behavior.
     my @got  = sort(FastGlob::glob("$tmpdir/[^b]*"));
