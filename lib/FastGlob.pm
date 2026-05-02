@@ -89,16 +89,19 @@ sub glob {
     my $part;
     my $found1;
     my $out;
-    my $bracepat = qr(\{([^\{\}]*)\});
+    my $bracepat = qr(\{([^\{\}]+)\});
 
-    # deal with {xxx,yyy,zzz} 
+    # skip empty patterns — CORE::glob returns nothing for them
+    @_ = grep { defined $_ && $_ ne '' } @_;
+
+    # deal with {xxx,yyy,zzz}
     @res = ();
     $found1 = 1;
     while ($found1) {
     $found1 = 0;
     for (@_) {
         if ( m{$bracepat} ) {
-        foreach $part (split(',',$1)) {
+        foreach $part (split(',',$1,-1)) {
             $out = $_;
             $out =~ s/$bracepat/$part/;
             push(@res, $out);
@@ -112,8 +115,12 @@ sub glob {
         @res = ();
     }
 
-    # skip empty patterns — CORE::glob returns nothing for them
-    @_ = grep { defined $_ && $_ ne '' } @_;
+    # Strip bare {} — empty braces that weren't matched by brace expansion
+    # are a no-op (like CORE::glob: a{} → a, but standalone {} stays literal)
+    for (@_) {
+        next if $_ eq '{}';
+        s/\{\}//g;
+    }
 
     for (@_) {
     # check for and do  tilde expansion
@@ -145,8 +152,15 @@ sub glob {
 
     for (@_) {
     # if there's no wildcards, just return it
-        unless (/(?<!\\)[*?\[\]{}]/) {
-        push (@res, $_);
+        unless (/(?<!\\)[*?\[\]]/) {
+        # Strip glob escape backslashes (like CORE::glob does).
+        # On Windows, \ is the path separator, not an escape char.
+        if ( $IS_WINDOWS ) {
+            push (@res, $_);
+        } else {
+            (my $literal = $_) =~ s/\\(.)/$1/g;
+            push (@res, $literal);
+        }
         next;
         }
 
