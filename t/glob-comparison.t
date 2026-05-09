@@ -153,8 +153,7 @@ compare_glob( '[a-d]*',
     'character range [a-d]* matches a-d prefix files' );
 
 compare_glob( '*[!.]*',
-    'negation [!.]* excludes dot-containing names',
-    todo => 'POSIX [!...] negation not yet converted to regex [^...]' );
+    'negation [!.]* excludes dot-containing names' );
 
 # =================================================================
 # Section 3: Brace expansion
