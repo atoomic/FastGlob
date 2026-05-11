@@ -173,6 +173,10 @@ sub glob {
         # escape regex metacharacters that are not glob syntax
         $comp =~ s/([+.|(){}\$])/\\$1/g;
 
+        # POSIX glob treats [^...] as literal ^ (not negation).
+        # Escape it BEFORE converting [!...] to [^...] below.
+        $comp =~ s/\[\^/[\\^/g;
+
         # convert POSIX [!...] negation to regex [^...]
         # Only convert when there are chars between ! and ] (avoid [!] -> [^] which is invalid)
         $comp =~ s/\[!(?=[^\]]+\])/[^/g;

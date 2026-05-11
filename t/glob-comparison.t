@@ -153,8 +153,15 @@ compare_glob( '[a-d]*',
     'character range [a-d]* matches a-d prefix files' );
 
 compare_glob( '*[!.]*',
-    'negation [!.]* excludes dot-containing names',
-    todo => 'POSIX [!...] negation not yet converted to regex [^...]' );
+    'negation [!.]* excludes dot-containing names' );
+
+# POSIX glob: [^...] treats ^ as literal, only [!...] is negation.
+# CORE::glob confirms this — [^F]* matches files starting with ^ or F.
+compare_glob( '[^a]*',
+    'caret in bracket [^a]* is literal, not negation' );
+
+compare_glob( '[!a]*',
+    'bang in bracket [!a]* is POSIX negation' );
 
 # =================================================================
 # Section 3: Brace expansion
