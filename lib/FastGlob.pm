@@ -51,6 +51,23 @@ For classic MacOS you would set:
 Tilde expansion (C<~> and C<~user>) uses C<getpwuid>/C<getpwnam> on UNIX.
 On Windows, C<~> falls back to C<$HOME> or C<$USERPROFILE>.
 
+=head2 Globstar (C<**>)
+
+The C<**> pattern matches zero or more directory levels, enabling recursive
+file matching:
+
+        # Find all .c files at any depth
+        my @all_c = glob('src/**/*.c');
+
+        # Find a specific file anywhere in the tree
+        my @found = glob('**/config.yaml');
+
+        # Everything under a directory
+        my @tree = glob('lib/**');
+
+When C<$FastGlob::hidedotfiles> is true (the default), C<**> will not
+descend into directories whose names begin with a dot.
+
 =head1 INSTALLATION
 
 Copy this module to the Perl 5 Library directory.
@@ -167,7 +184,10 @@ sub glob {
 
     # Transform each component into a regex
     for my $comp (@comps) {
-        if ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
+        # Globstar: ** alone matches zero or more directory levels
+        if ( $comp eq '**' ) {
+        $comp = '**';    # sentinel — handled specially in recurseglob
+        } elsif ( $comp =~ /(?<!\\)[*?\[\]]/ ) {
         # Wildcard component: convert glob pattern to regex
 
         # escape regex metacharacters that are not glob syntax
@@ -208,7 +228,7 @@ sub recurseglob {
 
 
     if ( @comps == 0 ) {
-        # bottom of recursion, just return the path 
+        # bottom of recursion, just return the path
         chop($dirname);  # always has gratiutous trailing slash
         @res = ($dirname);
     } elsif ($comps[0] eq '') {
@@ -216,6 +236,52 @@ sub recurseglob {
     push(@res, &recurseglob( "$dir$dirsep",
                     "$dirname$dirsep",
                     @comps ));
+    } elsif ($comps[0] eq '**') {
+        # Globstar: match zero or more directory levels
+        shift(@comps);
+
+        my $dh;
+        if (!opendir($dh, $dir)) {
+            carp "FastGlob: opendir '$dir' failed: $!" if $verbose;
+            return @res;
+        }
+        @names = readdir($dh);
+        closedir($dh);
+
+        # Always exclude . and .. to prevent infinite recursion.
+        # Apply dotfile hiding to directory traversal.
+        if ( $hidedotfiles ) {
+            @names = grep { !/\A\./ } @names;
+        } else {
+            @names = grep { $_ ne '.' && $_ ne '..' } @names;
+        }
+
+        if ( @comps == 0 ) {
+            # ** is the final component: match all entries at all depths
+            foreach (@names) {
+                push(@res, "$dirname$_");
+                my $subdir = "$dir$dirsep$_";
+                if ( -d $subdir ) {
+                    push(@res, &recurseglob( $subdir,
+                                "$dirname$_$dirsep",
+                                '**' ));
+                }
+            }
+        } else {
+            # ** with remaining components: match zero or more dir levels
+            # Zero levels: try remaining components in current dir
+            push(@res, &recurseglob( $dir, $dirname, @comps ));
+
+            # One or more levels: descend into subdirectories with ** re-prepended
+            foreach (@names) {
+                my $subdir = "$dir$dirsep$_";
+                if ( -d $subdir ) {
+                    push(@res, &recurseglob( $subdir,
+                                "$dirname$_$dirsep",
+                                '**', @comps ));
+                }
+            }
+        }
     } else {
         $re = '\A' . shift(@comps) . '\Z';
 
